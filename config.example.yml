@@ -1,0 +1,19 @@
+---
+# The per-run config. Copy it to ~/Documents/GitHub/cloudera-ce-ecs-aws/config-srm-ecs.yml, chmod 600,
+# list it in that clone's .git/info/exclude (it holds plaintext passwords), and fill the CHANGEME values.
+# scripts/ecs-run.sh passes it to every playbook as -e @config-srm-ecs.yml.
+
+name_prefix: "srmecs"                 # 4-7 chars, [a-z][a-z0-9-]; also the AWS deployment tag the teardown proof counts
+infra_region: "us-east-2"
+owner_email: "CHANGEME"
+
+# Letters and digits only. CM, FreeIPA and the database admin receive it inside basic-auth URLs,
+# where @ # / : break the URL, and the failing task hides its output.
+common_password: "CHANGEME"
+
+# ecs-cluster.yml requires an upper, a lower, a digit and one of #&*$%@^._!  Use _ or . only,
+# the two that are safe inside a URL.
+cloudera_ecs_admin_password: "CHANGEME"
+
+# The archive.cloudera.com repo credentials go below. Append them with
+#   python3 ~/Documents/GitHub/srm-runbook-cloudera-ce-ecs-aws/scripts/license-creds.py >> config-srm-ecs.yml

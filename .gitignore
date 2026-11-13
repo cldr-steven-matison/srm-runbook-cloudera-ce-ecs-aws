@@ -1,0 +1,6 @@
+config-*.yml
+!config.example.yml
+*.env
+runs/
+*.log
+.claude/settings.local.json

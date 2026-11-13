@@ -1,0 +1,35 @@
+{
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "600000",
+    "BASH_MAX_TIMEOUT_MS": "600000"
+  },
+  "permissions": {
+    "defaultMode": "default",
+    "allow": [
+      "Bash(bash scripts/ecs-status.sh)",
+      "Bash(bash scripts/ecs-wait.sh)",
+      "Bash(bash scripts/ecs-wait.sh:*)",
+      "Bash(bash scripts/ecs-run.sh --check)",
+      "Bash(bash scripts/ecs-run.sh --check:*)",
+      "Bash(bash scripts/ecs-teardown-and-prove.sh --prove)",
+      "Bash(git -C ~/Documents/GitHub/cloudera-ce-ecs-aws merge-base:*)",
+      "Read(./**)"
+    ],
+    "deny": [
+      "Bash(ansible-navigator:*)",
+      "Bash(terraform:*)",
+      "Bash(aws:*)",
+      "Bash(rm:*)",
+      "Bash(tmux kill-session:*)",
+      "Bash(tmux kill-server:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker kill:*)",
+      "Read(~/Documents/GitHub/cloudera-ce-ecs-aws/config-srm-ecs.yml)",
+      "Read(~/.config/ecs-aws/**)",
+      "Read(~/license.txt)",
+      "Edit(~/Documents/GitHub/cloudera-ce-ecs-aws/**)",
+      "Write(~/Documents/GitHub/cloudera-ce-ecs-aws/**)"
+    ]
+  }
+}
