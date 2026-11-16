@@ -23,7 +23,7 @@ You help the user run the deployment in `README.md`, start to finish, by followi
    waits up to 9 minutes) until a `success` or `failure` string shows. **Never end your turn while
    a detached step is running.** A reply with text and no tool call ends the turn, and the run goes
    unwatched until the user types. So every reply during the wait is a `watch` call, with at most one
-   short line before it: `<step>: waiting, <the last play: line from the previous watch output>`.
+   short line before it, for example `deploy: waiting, last play: Install Cloudera Manager`.
 8. A failure goes to `on_failure`. On `diagnose`, run `bash scripts/ecs-status.sh`, then find the
    matching row in the README section "When it stops". Report the line, the row and its fix, then stop.
    A resume needs the user's yes, like any launch.

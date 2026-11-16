@@ -14,7 +14,7 @@ cd "$ECS_REPO"
 check=0; [ "${1:-}" = "--check" ] && { check=1; shift; }
 books=("$@"); [ ${#books[@]} -eq 0 ] && books=(infrastructure services cms ozone-cluster ecs-cluster)
 fail() { echo "PREFLIGHT FAILED: $*" >&2; exit 1; }
-[ -f "$CDP_LICENSE_FILE" ] && head -1 "$CDP_LICENSE_FILE" | grep -q 'BEGIN PGP SIGNED MESSAGE' || fail "$CDP_LICENSE_FILE missing or not the PGP-signed Cloudera license"
+[ -f "$CDP_LICENSE_FILE" ] && head -1 "$CDP_LICENSE_FILE" | grep -q 'BEGIN PGP SIGNED MESSAGE' || fail "$CDP_LICENSE_FILE missing or not the PGP-signed Cloudera license; never create another"
 [ -f "$CFG" ] || fail "no $ECS_REPO/$CFG: README, One-time setup"
 grep -qE '^[a-z_]+: *"CHANGEME"' "$CFG" && fail "$CFG still has CHANGEME values"
 grep -qE '^common_password: *"[[:alnum:]]{8,}"' "$CFG" || fail "common_password must be 8+ letters and digits only"
@@ -33,6 +33,18 @@ code=$(printf 'user = "%s:%s"\n' "$ru" "$rp" | curl -s -K - -o /dev/null -w '%{h
 [ "$code" = 200 ] || fail "the Cloudera Manager repo answered $code, not 200: $repo (403: the license or the repo credentials in $CFG are not accepted; 401: no credentials)"
 grep -q 'ECS_REPO}/patches/RedHat-pre.yml' ansible-navigator.yml && [ -f patches/RedHat-pre.yml ] || fail "the clone is not on srm-561: git -C $ECS_REPO switch srm-561"
 for b in "${books[@]}"; do [ -f "playbooks/$b.yml" ] || fail "playbooks/$b.yml not found"; done
+# services installs PostgreSQL 14 from PGDG. On 2026-11-16 PGDG listed its newest server RPM but answered
+# 404 for it, and the run stopped 70 minutes in. Fetching the first KB here finds that at minute zero.
+pg=; case " ${books[*]} " in *" services "*)
+  pgdg=https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-9-x86_64
+  pm=$(curl -s --max-time 30 "$pgdg/repodata/repomd.xml" | grep -o 'repodata/[^"]*-primary\.xml\.gz' || true)
+  [ -n "$pm" ] || fail "cannot read the PGDG repo metadata: $pgdg/repodata/repomd.xml"
+  rpm=$(curl -s --max-time 60 "$pgdg/$pm" | gunzip | grep -o 'postgresql14-server-[^"]*\.x86_64\.rpm' | sort -V | tail -1 || true)
+  [ -n "$rpm" ] || fail "no postgresql14-server in the PGDG metadata: $pgdg/$pm"
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 -r 0-1023 "$pgdg/$rpm")
+  [[ $code = 20[06] ]] || fail "PGDG answered $code for $rpm, so the services playbook cannot install PostgreSQL: wait until it answers 200, then retry (README, When it stops)"
+  pg=", PGDG 200" ;;
+esac
 keys=; case " ${books[*]} " in *" cai-workbench "*)
   keys=$KEYS
   case "$(ls -l "$KEYS" 2>/dev/null)" in -rw-------*) ;; *) fail "$KEYS missing or not mode 600: README, The Control Plane keys" ;; esac
@@ -41,11 +53,11 @@ keys=; case " ${books[*]} " in *" cai-workbench "*)
 esac
 [ -x "$VENV/bin/ansible-navigator" ] || fail "no $VENV: README, One-time setup"
 docker info >/dev/null 2>&1 || fail "Docker is not running: start Docker Desktop"
-tmux has-session -t "$SESSION" 2>/dev/null && fail "tmux session $SESSION exists: a run is in progress (scripts/ecs-status.sh)"
+tmux has-session -t "$SESSION" 2>/dev/null && fail "tmux session $SESSION exists: a run is in progress (scripts/ecs-status.sh); one run at a time"
 pgrep -f 'ansible-navigator run playbooks/[a-z]' >/dev/null && fail "a run is already in progress: $(pgrep -lf 'ansible-navigator run' | head -1 | cut -c1-120)"
 [ -n "$(docker ps -q --filter name=ansible_runner_)" ] && fail "a runner container is still up: $(docker ps --format '{{.Names}}' --filter name=ansible_runner_)"
 aws sts get-caller-identity --profile "$PROFILE" --output text --query Arn >/dev/null 2>&1 || fail "AWS creds: run  aws sso login --profile $PROFILE  then retry"
-if [ $check -eq 1 ]; then echo "preflight ok: license (to $lic_end), CM repo 200, config, navigator, creds, no run in progress; playbooks: ${books[*]}"; exit 0; fi
+if [ $check -eq 1 ]; then echo "preflight ok: license (to $lic_end), CM repo 200$pg, config, navigator, creds, no run in progress; playbooks: ${books[*]}"; exit 0; fi
 args=(); for b in "${books[@]}"; do args+=("playbooks/$b.yml"); done
 mkdir -p runs
 LOG="runs/$(date -u +%Y%m%dT%H%M)-${books[0]}.log"

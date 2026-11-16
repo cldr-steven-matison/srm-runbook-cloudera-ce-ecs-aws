@@ -141,6 +141,7 @@ The workbench quota is 50 CPU and 46 GiB. ECS at this size carries one data serv
 | `PREFLIGHT FAILED: <what>` | the line | the fix it names |
 | `PREFLIGHT FAILED: the license expired on <date>` | `expirationDate` in `~/license.txt` | put the renewed license in `~/license.txt`, then replace the two `cloudera_manager_repo_*` lines in `config-srm-ecs.yml` with the `license-creds.py` output |
 | `Failed to download metadata for repo 'cloudera-manager'` | `ecs-run.sh --check`, which tests the repo for a 200 | a 403 means archive.cloudera.com refuses the license: renew it as in the row above, then resume from `cms` |
+| `Failed to download packages: postgresql14-server-…` on `srmecs-services-01` | `ecs-run.sh --check`, which fetches that RPM from download.postgresql.org | PGDG is not serving the file: tear down, or wait, and resume `ecs-run.sh services cms ozone-cluster ecs-cluster` once the check passes |
 | `AWS credentials are expired or not configured!` | `aws sts get-caller-identity --profile cldr-se` | `aws sso login --profile cldr-se`, then the same `ecs-run.sh` command |
 | `'common_password' is undefined` | the command in the log | the playbook ran without `ecs-run.sh`; launch it through the script |
 | `cloudera_ecs_admin_password must be at least 8 characters…` | the config | fix the value, then `ecs-run.sh ecs-cluster` |
@@ -217,7 +218,7 @@ directory, and ask it to run `card.yml`:
 ```bash
 OLLAMA_HOST=127.0.0.1:11434 OLLAMA_NO_CLOUD=1 OLLAMA_CONTEXT_LENGTH=65536 ollama serve
 cd ~/Documents/GitHub/srm-runbook-cloudera-ce-ecs-aws
-ollama launch claude --model gemma4:26b-mlx
+claude-ollama          # claude with ANTHROPIC_BASE_URL=http://127.0.0.1:11434 and the model set to gemma4:26b-mlx
 ```
 
 ## What not to do
