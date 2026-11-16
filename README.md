@@ -21,7 +21,17 @@ branch `srm-561`. It is upstream plus four changes, also described in the fork's
 
 ## Status
 
-Not verified. No full run has passed yet. Each one stopped part way:
+Verified 2026-11-16: one `bash scripts/ecs-run.sh` from the start, with no fix and no re-run in
+between, driven by Gemma 4 (`gemma4:26b-mlx`) on the card:
+
+```text
+RUN END 2026-11-16 19:00:39 UTC: navigator rc=0, runs/artifacts/4350c928-0b7b-4f8f-b595-a372bb659a16/ status=successful
+RUN END 2026-11-16 19:30:53 UTC: navigator rc=0, runs/artifacts/6bcdc245-2ba1-49bb-a30e-8bc98f08efc5/ status=successful
+TEARDOWN END 2026-11-16 19:55:04 UTC: navigator rc=0, EC2=0 EBS=0 VPC=0 EIP(tagged)=0 EIP(named)=0 clean
+```
+
+The deploy took 3h48m, the AI Workbench 12 minutes and the teardown 6 minutes. Pause and resume have
+not run. The runs before it stopped part way:
 
 | Date | Stopped in | Log line |
 |---|---|---|
@@ -29,10 +39,6 @@ Not verified. No full run has passed yet. Each one stopped part way:
 | 2026-11-13 | `cms` | `Failed to download metadata for repo 'cloudera-manager'`: the license had expired |
 | 2026-11-13 | `ecs-cluster` | the same kubernetes error; the 11-12 fix did not hold in a full run, and `420b21a` replaces it |
 | 2026-11-16 | `services` | `Failed to download packages: postgresql14-server-14.25-1PGDG.rhel9.8.x86_64`: PGDG had removed the file |
-
-It counts as verified when one `bash scripts/ecs-run.sh` from the start ends
-`RUN END ... status=successful`, with no fix and no re-run in between. That line goes here when it
-happens.
 
 ## What it builds and what it costs
 
@@ -123,9 +129,11 @@ up. This is the one step you do by hand.
 
 1. Open the `ECS console` URL that `ecs-status.sh` prints and log in as `admin` with
    `cloudera_ecs_admin_password`.
-2. User Profile → Generate Access Key. Copy the whole private key. It is 44 characters, and any other
+2. Give `admin` every role under User Management, then add `admin` to the environment with every
+   environment role. Without them the workbench playbook has no rights in the environment.
+3. User Profile → Generate Access Key. Copy the whole private key. It is 44 characters, and any other
    length fails with `Only ed25519v1 keys are supported!`.
-3. Write the three exports to `~/.config/ecs-aws/cp-keys.env`, then `chmod 600` it:
+4. Write the three exports to `~/.config/ecs-aws/cp-keys.env`, then `chmod 600` it:
 
    ```bash
    export CDP_ACCESS_KEY_ID=...
@@ -133,7 +141,7 @@ up. This is the one step you do by hand.
    export CDP_ENDPOINT_URL=https://console-cdp.apps.ecs.<gateway ip>.nip.io
    ```
 
-4. Run the workbench:
+5. Run the workbench:
 
    ```bash
    bash scripts/ecs-run.sh --check cai-workbench   # tests the file mode and the key length

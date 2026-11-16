@@ -61,9 +61,10 @@ steps:
   - id: cp-keys
     human: true
     note: >-
-      The user: open the ECS console URL that ecs-status.sh printed, log in as admin, then User Profile ->
-      Generate Access Key, and write the three exports to ~/.config/ecs-aws/cp-keys.env (mode 600).
-      README, The Control Plane keys.
+      The user: open the ECS console URL that ecs-status.sh printed, log in as admin, give admin every
+      role under User Management and add admin to the environment with every environment role, then
+      User Profile -> Generate Access Key, and write the three exports to ~/.config/ecs-aws/cp-keys.env
+      (mode 600). README, The Control Plane keys.
     next: cai-preflight
 
   - id: cai-preflight
