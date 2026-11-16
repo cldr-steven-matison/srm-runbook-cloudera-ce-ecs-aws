@@ -1,6 +1,6 @@
-# Sourced by every script in scripts/. The one place these names live.
+# Sourced by every script in scripts/. Change the paths and names for your machine here.
 export ECS_REPO="$HOME/Documents/GitHub/cloudera-ce-ecs-aws"   # the fork clone, branch srm-561
-export CDP_LICENSE_FILE="$HOME/license.txt"                    # the only license file
+export CDP_LICENSE_FILE="$HOME/license.txt"                    # the PGP-signed Cloudera license
 export VENV="$HOME/.venvs/cdp-navigator"
 export PREFIX=srmecs                                           # name_prefix, and the AWS deployment tag
 export PROFILE=cldr-se                                         # AWS SSO profile

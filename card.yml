@@ -3,13 +3,13 @@
 #
 # Per step:
 #   run        the one command for the step; nothing else is run for it
-#   needs_yes  true: Steven approves this exact command at the permission prompt. A retry is a new yes.
-#   human      a step only Steven does: show `note`, then wait for him to say it is done
+#   needs_yes  true: the user approves this exact command at the permission prompt. A retry is a new yes.
+#   human      a step only the user does: show `note`, then wait for the user to say it is done
 #   detached   the command returns at once; then run `watch` again and again until a `success` or
 #              `failure` string appears in its output
-#   max_wall   report to Steven after this long; never kill a run
+#   max_wall   report to the user after this long; never kill a run
 #   evidence   what goes in the step's report
-#   on_failure a handler in `handlers`, or stop: report the line to Steven and do nothing else
+#   on_failure a handler in `handlers`, or stop: report the line to the user and do nothing else
 
 card: cloudera-ce-ecs-aws
 readme: README.md
@@ -19,18 +19,18 @@ never:
   - delete AWS resources, or touch tf_cluster_aws/terraform.tfstate
   - create, copy or edit a license file
   - read, print or paste a password, the repo credentials or the Control Plane keys
-  - run a needs_yes command that Steven has not approved
+  - run a needs_yes command that the user has not approved
 
 steps:
   - id: prereqs
     human: true
     note: >-
-      Steven: Docker Desktop running; aws sso login --profile cldr-se ; the Mac on AC power with the lid
+      The user: Docker Desktop running; aws sso login --profile cldr-se ; the Mac on AC power with the lid
       open; the VPN in one state (connected or not) from here to the prove step.
     next: fork
 
   - id: fork
-    run: git -C ~/Documents/GitHub/cloudera-ce-ecs-aws merge-base --is-ancestor 539f459 HEAD && echo "fork ok"
+    run: git -C ~/Documents/GitHub/cloudera-ce-ecs-aws merge-base --is-ancestor 420b21a HEAD && echo "fork ok"
     needs_yes: false
     success: ["fork ok"]
     on_failure: stop
@@ -61,7 +61,7 @@ steps:
   - id: cp-keys
     human: true
     note: >-
-      Steven: open the ECS console URL that ecs-status.sh printed, log in as admin, then User Profile ->
+      The user: open the ECS console URL that ecs-status.sh printed, log in as admin, then User Profile ->
       Generate Access Key, and write the three exports to ~/.config/ecs-aws/cp-keys.env (mode 600).
       README, The Control Plane keys.
     next: cai-preflight
@@ -71,7 +71,7 @@ steps:
     needs_yes: false
     success: ["preflight ok"]
     failure: ["PREFLIGHT FAILED:"]
-    on_failure: stop          # "not 44 characters" sends Steven back to the cp-keys step
+    on_failure: stop          # "not 44 characters" sends the user back to the cp-keys step
     next: cai
 
   - id: cai
@@ -111,7 +111,7 @@ steps:
     success_all: true
     failure: ["LEFTOVERS"]
     max_wall: 30m             # about 5 min
-    on_failure: stop          # leftovers are released or deleted by id only on Steven's yes
+    on_failure: stop          # leftovers are released or deleted by id only on the user's yes
     evidence: the TEARDOWN END line
     next: prove
 
@@ -128,8 +128,8 @@ handlers:
     run: bash scripts/ecs-status.sh
     needs_yes: false
     note: >-
-      Report the last play, task and fatal line to Steven, with the README "When it stops" row that
+      Report the last play, task and fatal line to the user, with the README "When it stops" row that
       matches, if one does. A resume is the failed playbook and every one after it, for example
-      bash scripts/ecs-run.sh ecs-cluster , and needs Steven's yes. A failure with no matching row:
+      bash scripts/ecs-run.sh ecs-cluster , and needs the user's yes. A failure with no matching row:
       report it, do not resume.
     next: stop

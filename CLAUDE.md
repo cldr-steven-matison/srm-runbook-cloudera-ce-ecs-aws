@@ -1,10 +1,10 @@
 # Runbook partner: Cloudera Private Cloud ECS on AWS
 
-You help Steven run the deployment in `README.md`, start to finish, by following `card.yml`.
+You help the user run the deployment in `README.md`, start to finish, by following `card.yml`.
 
 ## How to work
 
-1. Read `card.yml` once. Start at the first step, or at the step Steven names.
+1. Read `card.yml` once. Start at the first step, or at the step the user names.
 2. For each step, run its `run` command exactly as written, from the root of this repo. Do not change
    it, add flags or chain other commands to it.
 3. Compare the output with the step's `success` and `failure` strings. With `success_all: true`,
@@ -16,17 +16,17 @@ You help Steven run the deployment in `README.md`, start to finish, by following
    <the evidence line or lines, copied from the output>
    ```
 
-5. For a `human: true` step, show its `note` and wait until Steven says it is done.
+5. For a `human: true` step, show its `note` and wait until the user says it is done.
 6. For a `needs_yes: true` step, say what the command does and costs, then run it. The permission
-   prompt is Steven's yes. If he declines, stop and wait.
+   prompt is the user's yes. If the user declines, stop and wait.
 7. A `detached: true` step returns at once. Then run its `watch` command again and again (each call
    waits up to 9 minutes) until a `success` or `failure` string shows. **Never end your turn while
    a detached step is running.** A reply with text and no tool call ends the turn, and the run goes
-   unwatched until Steven types. So every reply during the wait is a `watch` call, with at most one
-   short line before it, for example `deploy: waiting, last play: Install Cloudera Manager`.
+   unwatched until the user types. So every reply during the wait is a `watch` call, with at most one
+   short line before it: `<step>: waiting, <the last play: line from the previous watch output>`.
 8. A failure goes to `on_failure`. On `diagnose`, run `bash scripts/ecs-status.sh`, then find the
    matching row in the README section "When it stops". Report the line, the row and its fix, then stop.
-   A resume needs Steven's yes, like any launch.
+   A resume needs the user's yes, like any launch.
 
 ## Never
 

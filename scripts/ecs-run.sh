@@ -14,7 +14,7 @@ cd "$ECS_REPO"
 check=0; [ "${1:-}" = "--check" ] && { check=1; shift; }
 books=("$@"); [ ${#books[@]} -eq 0 ] && books=(infrastructure services cms ozone-cluster ecs-cluster)
 fail() { echo "PREFLIGHT FAILED: $*" >&2; exit 1; }
-[ -f "$CDP_LICENSE_FILE" ] && head -1 "$CDP_LICENSE_FILE" | grep -q 'BEGIN PGP SIGNED MESSAGE' || fail "$CDP_LICENSE_FILE missing or not the PGP-signed Cloudera license; never create another"
+[ -f "$CDP_LICENSE_FILE" ] && head -1 "$CDP_LICENSE_FILE" | grep -q 'BEGIN PGP SIGNED MESSAGE' || fail "$CDP_LICENSE_FILE missing or not the PGP-signed Cloudera license"
 [ -f "$CFG" ] || fail "no $ECS_REPO/$CFG: README, One-time setup"
 grep -qE '^[a-z_]+: *"CHANGEME"' "$CFG" && fail "$CFG still has CHANGEME values"
 grep -qE '^common_password: *"[[:alnum:]]{8,}"' "$CFG" || fail "common_password must be 8+ letters and digits only"
@@ -41,7 +41,7 @@ keys=; case " ${books[*]} " in *" cai-workbench "*)
 esac
 [ -x "$VENV/bin/ansible-navigator" ] || fail "no $VENV: README, One-time setup"
 docker info >/dev/null 2>&1 || fail "Docker is not running: start Docker Desktop"
-tmux has-session -t "$SESSION" 2>/dev/null && fail "tmux session $SESSION exists: a run is in progress (scripts/ecs-status.sh); one run at a time"
+tmux has-session -t "$SESSION" 2>/dev/null && fail "tmux session $SESSION exists: a run is in progress (scripts/ecs-status.sh)"
 pgrep -f 'ansible-navigator run playbooks/[a-z]' >/dev/null && fail "a run is already in progress: $(pgrep -lf 'ansible-navigator run' | head -1 | cut -c1-120)"
 [ -n "$(docker ps -q --filter name=ansible_runner_)" ] && fail "a runner container is still up: $(docker ps --format '{{.Names}}' --filter name=ansible_runner_)"
 aws sts get-caller-identity --profile "$PROFILE" --output text --query Arn >/dev/null 2>&1 || fail "AWS creds: run  aws sso login --profile $PROFILE  then retry"

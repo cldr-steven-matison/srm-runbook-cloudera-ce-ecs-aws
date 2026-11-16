@@ -26,7 +26,7 @@ case "${1:-}" in
 --prove) prove; exit $? ;;
 --in-tmux) ;;
 "")
-  tmux has-session -t "$SESSION" 2>/dev/null && { echo "NOT LAUNCHED: tmux session $SESSION exists; one run at a time" >&2; exit 1; }
+  tmux has-session -t "$SESSION" 2>/dev/null && { echo "NOT LAUNCHED: tmux session $SESSION exists, a run is in progress" >&2; exit 1; }
   aws sts get-caller-identity --profile "$PROFILE" --output text --query Arn >/dev/null 2>&1 || { echo "NOT LAUNCHED: AWS creds: run  aws sso login --profile $PROFILE  then retry" >&2; exit 1; }
   mkdir -p "$ECS_REPO/runs"
   LOG="$ECS_REPO/runs/$(date -u +%Y%m%dT%H%M)-teardown.log"
@@ -49,7 +49,7 @@ if [ $v = clean ]; then
   # the Caddy root cert and the URL summary. The runs/ logs stay as the record of the run.
   rm -f playbooks/*.nip.io.crt playbooks/*.nip.io.pem "playbooks/$PREFIX-caddy-root.crt" "$PREFIX-caddy-root.crt" "$PREFIX-summary.html"
 else
-  echo "LEFTOVERS: release or delete by id only on an explicit yes:"
+  echo "LEFTOVERS: release or delete these by id:"
   aws ec2 describe-addresses --query "Addresses[?Tags[?Key=='Name' && starts_with(Value, '$PREFIX-')]].[AllocationId,PublicIp,AssociationId]" --profile "$PROFILE" --region "$REGION" --output text || true
 fi
 echo "TEARDOWN END $(date -u "+%Y-%m-%d %H:%M:%S") UTC: navigator rc=$rc, $proof $v"
