@@ -31,5 +31,18 @@
       "Edit(~/Documents/GitHub/cloudera-ce-ecs-aws/**)",
       "Write(~/Documents/GitHub/cloudera-ce-ecs-aws/**)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/card-commands-only.sh" }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/keep-watching.sh" }]
+      }
+    ]
   }
 }

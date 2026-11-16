@@ -32,6 +32,12 @@ ru=$(sed -n 's/^cloudera_manager_repo_username: *"\(.*\)"/\1/p' "$CFG"); rp=$(se
 code=$(printf 'user = "%s:%s"\n' "$ru" "$rp" | curl -s -K - -o /dev/null -w '%{http_code}' --max-time 30 "$repo")
 [ "$code" = 200 ] || fail "the Cloudera Manager repo answered $code, not 200: $repo (403: the license or the repo credentials in $CFG are not accepted; 401: no credentials)"
 grep -q 'ECS_REPO}/patches/RedHat-pre.yml' ansible-navigator.yml && [ -f patches/RedHat-pre.yml ] || fail "the clone is not on srm-561: git -C $ECS_REPO switch srm-561"
+# A clone behind GitHub runs old code and an old card, so both must match their branch on GitHub.
+for r in "$ECS_REPO" "$(cd "$HERE/.." && pwd)"; do
+  git -C "$r" fetch -q origin 2>/dev/null || fail "git fetch failed in $r"
+  [ -z "$(git -C "$r" status --porcelain --untracked-files=no)" ] || fail "$r has uncommitted changes"
+  [ "$(git -C "$r" rev-parse HEAD)" = "$(git -C "$r" rev-parse '@{u}')" ] || fail "$r does not match $(git -C "$r" rev-parse --abbrev-ref '@{u}'): git -C $r pull --ff-only"
+done
 for b in "${books[@]}"; do [ -f "playbooks/$b.yml" ] || fail "playbooks/$b.yml not found"; done
 # services installs PostgreSQL 14 from PGDG. On 2026-11-16 PGDG listed its newest server RPM but answered
 # 404 for it, and the run stopped 70 minutes in. Fetching the first KB here finds that at minute zero.
@@ -57,7 +63,7 @@ tmux has-session -t "$SESSION" 2>/dev/null && fail "tmux session $SESSION exists
 pgrep -f 'ansible-navigator run playbooks/[a-z]' >/dev/null && fail "a run is already in progress: $(pgrep -lf 'ansible-navigator run' | head -1 | cut -c1-120)"
 [ -n "$(docker ps -q --filter name=ansible_runner_)" ] && fail "a runner container is still up: $(docker ps --format '{{.Names}}' --filter name=ansible_runner_)"
 aws sts get-caller-identity --profile "$PROFILE" --output text --query Arn >/dev/null 2>&1 || fail "AWS creds: run  aws sso login --profile $PROFILE  then retry"
-if [ $check -eq 1 ]; then echo "preflight ok: license (to $lic_end), CM repo 200$pg, config, navigator, creds, no run in progress; playbooks: ${books[*]}"; exit 0; fi
+if [ $check -eq 1 ]; then echo "preflight ok: license (to $lic_end), CM repo 200$pg, clones match GitHub, config, navigator, creds, no run in progress; playbooks: ${books[*]}"; exit 0; fi
 args=(); for b in "${books[@]}"; do args+=("playbooks/$b.yml"); done
 mkdir -p runs
 LOG="runs/$(date -u +%Y%m%dT%H%M)-${books[0]}.log"

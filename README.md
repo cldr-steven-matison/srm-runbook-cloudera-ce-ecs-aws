@@ -8,15 +8,31 @@ checks nothing is left billing. It also has a step card, so Claude Code, or a lo
 Claude Code, can drive the run while you approve each launch.
 
 The playbooks run from a fork, [`cldr-steven-matison/cloudera-ce-ecs-aws`](https://github.com/cldr-steven-matison/cloudera-ce-ecs-aws),
-branch `srm-561`. It is upstream plus three changes, also described in the fork's README:
+branch `srm-561`. It is upstream plus four changes, also described in the fork's README:
 
 - `6ed68ea` pins the execution environment by digest and mounts `patches/RedHat-pre.yml` over the
   `cloudera.exe` Caddy role. The stock role runs `dnf copr enable @caddy/caddy`, which RHEL 9 EC2 hosts
   without a Red Hat subscription cannot reach.
+- `29a9ffc` pins the Terraform host and network modules to commit `c5b5981` instead of `main`.
 - `539f459` and `420b21a` run the two ECS-master kubernetes plays in `ecs-cluster.yml` on
   `/usr/bin/python3`. The hosts get Python 3.11 as `python3`, and the play installs the `kubernetes`
   library there. Two `cloudera.exe` roles set the interpreter to `/usr/libexec/platform-python` (3.9),
   which cannot import it, and `420b21a` overrides them with a `set_fact`.
+
+## Status
+
+Not verified. No full run has passed yet. Each one stopped part way:
+
+| Date | Stopped in | Log line |
+|---|---|---|
+| 2026-11-12 | `ecs-cluster` | `Failed to import the required Python library (kubernetes)`; it passed only after a fix and a re-run of `ecs-cluster` on its own |
+| 2026-11-13 | `cms` | `Failed to download metadata for repo 'cloudera-manager'`: the license had expired |
+| 2026-11-13 | `ecs-cluster` | the same kubernetes error; the 11-12 fix did not hold in a full run, and `420b21a` replaces it |
+| 2026-11-16 | `services` | `Failed to download packages: postgresql14-server-14.25-1PGDG.rhel9.8.x86_64`: PGDG had removed the file |
+
+It counts as verified when one `bash scripts/ecs-run.sh` from the start ends
+`RUN END ... status=successful`, with no fix and no re-run in between. That line goes here when it
+happens.
 
 ## What it builds and what it costs
 
@@ -211,6 +227,14 @@ failure, and whether it needs your yes. [`CLAUDE.md`](CLAUDE.md) tells Claude Co
 [`.claude/settings.json`](.claude/settings.json) allows only the read-only scripts without a prompt and
 denies `ansible-navigator`, `terraform`, `aws` and `rm` outright. Every launch is a permission prompt,
 and approving the prompt is your yes.
+
+Two hooks in the same file hold the agent to the card whether it follows `CLAUDE.md` or not:
+
+- [`card-commands-only.sh`](.claude/hooks/card-commands-only.sh) refuses any shell command that is not
+  in `card.yml` exactly as written. The only extras are a resume (`ecs-run.sh` with playbook names) and
+  `ecs-wait.sh` with a timeout.
+- [`keep-watching.sh`](.claude/hooks/keep-watching.sh) refuses to let the agent end its turn while the
+  `srmecs` tmux session exists, and tells it to run `bash scripts/ecs-wait.sh`.
 
 The same files drive a local model. Serve Gemma 4 with Ollama, start Claude Code against it from this
 directory, and ask it to run `card.yml`:
